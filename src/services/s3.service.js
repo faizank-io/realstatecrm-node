@@ -92,6 +92,22 @@ class S3Service {
       return false;
     }
   }
+
+  /**
+   * Delete file from S3 bucket by full URL
+   */
+  async deleteFileByUrl(fileUrl) {
+    if (!fileUrl || !fileUrl.includes(".amazonaws.com/")) return false;
+    try {
+      const s3Key = fileUrl.split(".amazonaws.com/")[1];
+      if (s3Key) {
+        return await this.deleteFile(decodeURIComponent(s3Key));
+      }
+    } catch (error) {
+      logger.error(`❌ S3 Delete by URL Error: ${error.message}`);
+    }
+    return false;
+  }
 }
 
 module.exports = new S3Service();

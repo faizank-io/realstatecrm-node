@@ -9,55 +9,67 @@ class LookupController {
    * Only returns ACTIVE items.
    */
   getPropertyFormData = asyncHandler(async (req, res) => {
-    const [propertyTypes, listingStatuses, amenities, agents] = await Promise.all([
-      // Property types WITH their categories nested
-      prisma.propertyType.findMany({
-        where: { status: "ACTIVE" },
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          categories: {
-            where: { status: "ACTIVE" },
-            select: { id: true, name: true, slug: true },
-            orderBy: { name: "asc" }
-          }
-        },
-        orderBy: { name: "asc" }
-      }),
+    const [propertyTypes, listingStatuses, amenities, agents] =
+      await Promise.all([
+        // Property types WITH their categories nested
+        prisma.propertyType.findMany({
+          where: { status: "ACTIVE" },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            categories: {
+              where: { status: "ACTIVE" },
+              select: { id: true, name: true, slug: true },
+              orderBy: { name: "asc" },
+            },
+          },
+          orderBy: { name: "asc" },
+        }),
 
-      // Listing statuses (Available, Reserved, Rented, Sold etc.)
-      prisma.listingStatus.findMany({
-        where: { status: "ACTIVE" },
-        select: { id: true, name: true, slug: true, colorCode: true },
-        orderBy: { name: "asc" }
-      }),
+        // Listing statuses (Available, Reserved, Rented, Sold etc.)
+        prisma.listingStatus.findMany({
+          where: { status: "ACTIVE" },
+          select: { id: true, name: true, slug: true, colorCode: true },
+          orderBy: { name: "asc" },
+        }),
 
-      // Amenities (Lift, Parking, Generator etc.)
-      prisma.amenity.findMany({
-        where: { status: "ACTIVE" },
-        select: { id: true, name: true, slug: true, icon: true },
-        orderBy: { name: "asc" }
-      }),
+        // Amenities (Lift, Parking, Generator etc.)
+        prisma.amenity.findMany({
+          where: { status: "ACTIVE" },
+          select: { id: true, name: true, slug: true, icon: true },
+          orderBy: { name: "asc" },
+        }),
 
-      // Agents of this agency only (for "Assigned Agent" dropdown)
-      prisma.user.findMany({
-        where: {
-          agencyId: req.user.agencyId,
-          status: "ACTIVE",
-          role: { in: ["AGENT", "PROPERTY_MANAGER", "OFFICE_MANAGER", "AGENCY_OWNER"] }
-        },
-        select: { id: true, name: true, role: true, avatar: true },
-        orderBy: { name: "asc" }
-      })
-    ]);
+        // Agents of this agency only (for "Assigned Agent" dropdown)
+        prisma.user.findMany({
+          where: {
+            agencyId: req.user.agencyId,
+            status: "ACTIVE",
+            role: {
+              in: [
+                "AGENT",
+                "PROPERTY_MANAGER",
+                "OFFICE_MANAGER",
+                "AGENCY_OWNER",
+              ],
+            },
+          },
+          select: { id: true, name: true, role: true, avatar: true },
+          orderBy: { name: "asc" },
+        }),
+      ]);
 
-    return ApiResponse.success(res, {
-      propertyTypes,   // Includes nested categories
-      listingStatuses,
-      amenities,
-      agents
-    }, "Lookup data fetched");
+    return ApiResponse.success(
+      res,
+      {
+        propertyTypes, // Includes nested categories
+        listingStatuses,
+        amenities,
+        agents,
+      },
+      "Lookup data fetched",
+    );
   });
 
   /**
@@ -68,7 +80,7 @@ class LookupController {
     const sources = await prisma.leadSource.findMany({
       where: { status: "ACTIVE" },
       select: { id: true, name: true, slug: true },
-      orderBy: { name: "asc" }
+      orderBy: { name: "asc" },
     });
     return ApiResponse.success(res, sources, "Lead sources fetched");
   });
