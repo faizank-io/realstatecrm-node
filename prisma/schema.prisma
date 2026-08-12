@@ -172,6 +172,7 @@ model User {
 
   createdProperties   Property[] @relation("PropertyCreator")
   assignedProperties  Property[] @relation("PropertyAssignee")
+  createdClients      Client[]   @relation("ClientCreator")
   assignedClients     Client[]   @relation("ClientAssignee")
   assignedDeals       Deal[]     @relation("DealAssignee")
   assignedViewings    Viewing[]  @relation("ViewingAssignee")
@@ -340,6 +341,10 @@ model Property {
   listingStatusId String?
   listingStatus   ListingStatus?    @relation(fields: [listingStatusId], references: [id])
   
+  ownerClientId   String?
+  ownerClient     Client?        @relation("PropertyOwner", fields: [ownerClientId], references: [id], onDelete: SetNull)
+
+
   // Relations
   images          PropertyImage[]
   amenities       PropertyAmenity[]
@@ -429,8 +434,13 @@ model Client {
   agencyId        String
   agency          Agency         @relation(fields: [agencyId], references: [id], onDelete: Cascade)
 
+  createdById     String
+  createdBy       User           @relation("ClientCreator", fields: [createdById], references: [id])
+
   assignedToId    String?
   assignedTo      User?          @relation("ClientAssignee", fields: [assignedToId], references: [id])
+
+  ownedProperties Property[]     @relation("PropertyOwner")
 
   propertyLeads   PropertyLead[] // Properties this client is interested in
   deals           Deal[]

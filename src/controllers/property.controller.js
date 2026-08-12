@@ -52,6 +52,16 @@ class PropertyController {
     return ApiResponse.success(res, result, "Images uploaded successfully");
   });
 
+  deleteImage = asyncHandler(async (req, res) => {
+    const result = await PropertyService.deleteImage(req.params.id, req.params.imageId);
+    return ApiResponse.success(res, result, "Image deleted");
+  });
+
+  setMainImage = asyncHandler(async (req, res) => {
+    const result = await PropertyService.setMainImage(req.params.id, req.params.imageId);
+    return ApiResponse.success(res, result, "Cover image updated");
+  });
+
   getProperties = asyncHandler(async (req, res) => {
     // Agency users can only see their agency's properties
     const filters = { ...req.query };
@@ -62,13 +72,41 @@ class PropertyController {
     return ApiResponse.success(res, result, "Properties retrieved");
   });
 
+  exportProperties = asyncHandler(async (req, res) => {
+    const filters = { ...req.query };
+    if (req.user.role !== "SUPER_ADMIN") {
+      filters.agencyId = req.user.agencyId;
+    }
+    const csvContent = await PropertyService.exportPropertiesCSV(filters);
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", 'attachment; filename="properties-export.csv"');
+    return res.status(200).send(csvContent);
+  });
+
   getPropertyById = asyncHandler(async (req, res) => {
     const result = await PropertyService.getPropertyById(req.params.id);
     return ApiResponse.success(res, result, "Property retrieved");
   });
 
   updateProperty = asyncHandler(async (req, res) => {
-    const result = await PropertyService.updateProperty(req.params.id, req.body);
+    // Parse numeric fields (handles both JSON and multipart/form-data)
+    if (req.body.price     !== undefined) req.body.price     = parseFloat(req.body.price);
+    if (req.body.bedrooms  !== undefined) req.body.bedrooms  = parseInt(req.body.bedrooms);
+    if (req.body.bathrooms !== undefined) req.body.bathrooms = parseInt(req.body.bathrooms);
+    if (req.body.parking   !== undefined) req.body.parking   = parseInt(req.body.parking);
+    if (req.body.floors    !== undefined) req.body.floors    = parseInt(req.body.floors);
+    if (req.body.size      !== undefined) req.body.size      = parseFloat(req.body.size);
+    if (req.body.builtYear !== undefined) req.body.builtYear = parseInt(req.body.builtYear);
+    if (req.body.isFurnished === 'true')  req.body.isFurnished = true;
+    if (req.body.isFurnished === 'false') req.body.isFurnished = false;
+
+    // Amenities as JSON string or array
+    if (req.body.amenities && typeof req.body.amenities === 'string') {
+      try { req.body.amenities = JSON.parse(req.body.amenities); } catch (e) {}
+    }
+
+    const result = await PropertyService.updateProperty(req.params.id, req.user.id, req.body);
     return ApiResponse.success(res, result, "Property updated");
   });
 
@@ -78,8 +116,30 @@ class PropertyController {
   });
 
   approveListing = asyncHandler(async (req, res) => {
-    const result = await PropertyService.approveListing(req.params.id);
+    const result = await PropertyService.approveListing(req.params.id, req.user.id);
     return ApiResponse.success(res, result, "Property approved");
+  });
+
+  // ─── PAGINATED TAB ENDPOINTS ───────────────────────────────────────────────
+
+  getPropertyLeads = asyncHandler(async (req, res) => {
+    const result = await PropertyService.getPropertyLeads(req.params.id, req.query);
+    return ApiResponse.success(res, result, "Property leads retrieved");
+  });
+
+  getPropertyViewings = asyncHandler(async (req, res) => {
+    const result = await PropertyService.getPropertyViewings(req.params.id, req.query);
+    return ApiResponse.success(res, result, "Property viewings retrieved");
+  });
+
+  getPropertyDocuments = asyncHandler(async (req, res) => {
+    const result = await PropertyService.getPropertyDocuments(req.params.id, req.query);
+    return ApiResponse.success(res, result, "Property documents retrieved");
+  });
+
+  getPropertyActivity = asyncHandler(async (req, res) => {
+    const result = await PropertyService.getPropertyActivity(req.params.id, req.query);
+    return ApiResponse.success(res, result, "Property activity retrieved");
   });
 }
 
